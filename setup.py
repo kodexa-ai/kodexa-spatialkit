@@ -41,7 +41,7 @@ setup(name='kodexa-spatialkit',
 
           # Pick your license.  (It should match "license" above.)
 
-          '''License :: OSI Approved :: GPL3''',  # noqa
+          '''License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)''',  # noqa
           # noqa
           # Specify the Python versions you support here. In particular, ensure
           # that you indicate whether you support Python 2, Python 3 or both.
