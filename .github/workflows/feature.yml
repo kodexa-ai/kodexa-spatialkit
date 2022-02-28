@@ -1,0 +1,43 @@
+name: Python Package Using Anaconda
+
+on:
+  push:
+    branches-ignore:
+      - master
+      - main
+      - 'releases/*'
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+      - name: Increment version
+        id: version
+        uses: pdodds/Bump-N-Tag-Version@master
+        with:
+          file_name: './VERSION'
+          tag_version: "true"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Install dependencies
+        run: |
+          sudo chmod -R ugo+rwX .
+          pip install -r requirements.txt
+      - name: Lint with flake8
+        run: |
+          mypy --install-types
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          flake8 . --count --exit-zero --statistics
+          mypy kodexa
+      - name: Test with pytest
+        run: |
+          pytest
+      - name: Package
+        run: |
+          python setup.py bdist_wheel sdist

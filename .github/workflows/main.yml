@@ -1,0 +1,56 @@
+name: Python Package Using Anaconda
+
+on:
+  push:
+    branches:
+      - 'main'
+      - 'releases/*'
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python 3.8
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+      - name: Increment version
+        id: version
+        uses: pdodds/Bump-N-Tag-Version@master
+        with:
+          file_name: './VERSION'
+          tag_version: "true"
+          postfix: 'beta'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Install dependencies
+        run: |
+          sudo chmod -R ugo+rwX .
+          pip install -r requirements.txt
+      - name: Lint with flake8
+        run: |
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+          yes | mypy --install-types kodexa || true
+      - name: Test with pytest
+        run: |
+          pytest
+      - name: Package
+        run: |
+          python setup.py bdist_wheel sdist
+      - name: Publish a Python distribution to PyPI
+        uses: pypa/gh-action-pypi-publish@master
+        with:
+          user: __token__
+          password: ${{ secrets.PYPI_TOKEN }}
+      - name: Build Python Documentation
+        run: |
+          pdoc --html kodexa
+      - name: Deploy GitHub Page
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./html/kodexa
+          keep_files: true
