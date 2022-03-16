@@ -6,7 +6,6 @@ def transform_line_to_columns(node, col_space_multiplier=3.0, col_marker_line=No
     a new set of nodes (type column).
     Note that this action will transform the document.
 
-    :param node: the node to transform
     :param col_space_multiplier: Number of spaces between columns relative to the mean width of
     the characters on the page. Default is 3.0.
     :param col_marker_line: Line that dictates the positions of the columns. Default is None - which means the columns
@@ -283,18 +282,57 @@ def transform_lines_to_table(node, tag_name, table_lines,
 
 def insert_col_before_or_after(node, insert_col_before, insert_col_after, insert_col_index,
                                col_space_multiplier, use_graphical_nodes):
-    # Insert an empty column in col_marker_line
-    column_node = node.document.create_node(node_type='column')
+    # Insert (an) empty column/s in col_marker_line
+    # insert_col_index is expected to be the index after column before/after is/are added
 
-    # If insert_col_index is for the first or last column
-    if insert_col_index == 0:
-        insert_col_index = None
-        insert_col_before = True
-    elif insert_col_index == len(node.get_children()) or insert_col_index == -1:
-        insert_col_index = None
-        insert_col_after = True
+    new_columns = node.get_children()
+    if insert_col_before:
+        # First check if the empty column has already been inserted
+        # Happens during the automatic table tagger (since the algo is run twice on the same document for testing)
+        if not node.get_children()[0].get_all_content():
+            return
 
-    if insert_col_index is not None and 0 < insert_col_index < len(node.get_children()):
+        if use_graphical_nodes:
+            # Adjust the column's x first
+            graphical_nodes = [gn for gn in node.select('parent::page')[0].select('//rect | //figure-line')
+                               if gn.get_bbox()[0] < node.get_x()]
+
+            # Get the line with the max x from graphical_nodes
+            max_x = max([gn.get_bbox()[0] for gn in graphical_nodes])
+            first_col_node = node.get_children()[0]
+            first_col_node.set_bbox([max_x, node.get_y(), first_col_node.get_bbox()[2], node.get_bbox()[3]])
+            node.set_bbox([max_x, node.get_y(), node.get_bbox()[2], node.get_bbox()[3]])
+
+        new_x2 = node.get_x() - 0.01 if use_graphical_nodes \
+            else node.get_x() - col_space_multiplier * node.get_statistics()['updated_mean_width']
+        column_node = node.document.create_node(node_type='column')
+        column_node.set_bbox([0.0, node.get_y(), new_x2, node.get_bbox()[3]])
+        new_columns.insert(0, column_node)
+
+    if insert_col_after:
+        if not node.get_children()[-1].get_all_content():
+            return
+
+        if use_graphical_nodes:
+            # Adjust the column's x first
+            graphical_nodes = [gn for gn in node.select('parent::page')[0].select('//rect | //figure-line')
+                               if gn.get_bbox()[0] > node.get_bbox()[2]]
+
+            # Get the line with the max x from graphical_nodes
+            min_x = min([gn.get_bbox()[0] for gn in graphical_nodes])
+            last_col_node = node.get_children()[-1]
+            last_col_node.set_bbox([last_col_node.get_x(), node.get_y(), min_x, node.get_bbox()[3]])
+            node.set_bbox([node.get_x(), node.get_y(), last_col_node.get_bbox()[2], node.get_bbox()[3]])
+
+        # New bbox is from last node's x + page's width
+        new_x1 = node.get_bbox()[2] + 0.01 if use_graphical_nodes \
+            else node.get_bbox()[2] + col_space_multiplier * node.get_statistics()['updated_mean_width']
+        column_node = node.document.create_node(node_type='column')
+        column_node.set_bbox([new_x1, node.get_y(),
+                              node.select_first('parent::page').get_bbox()[2], node.get_bbox()[3]])
+        new_columns.append(column_node)
+
+    if insert_col_index is not None and 0 < insert_col_index < len(new_columns) - 1:
         # First check if the empty column has already been inserted
         # Happens during the automatic table tagger (since the algo is run twice on the same document for testing)
         if not node.get_children()[insert_col_index].get_all_content():
@@ -307,65 +345,11 @@ def insert_col_before_or_after(node, insert_col_before, insert_col_after, insert
         x2 = bbox_after[0]
         new_x1 = x1 + col_space_multiplier * node.get_statistics()['updated_mean_width']
         new_x2 = x2 - col_space_multiplier * node.get_statistics()['updated_mean_width']
+        column_node = node.document.create_node(node_type='column')
         column_node.set_bbox([new_x1, node.get_y(),
                               new_x2, node.get_bbox()[3]])
-        new_columns = node.get_children()
+
         new_columns.insert(insert_col_index, column_node)
-
-    elif insert_col_before or insert_col_after:
-        # First check if the empty column has already been inserted
-        # Happens during the automatic table tagger (since the algo is run twice on the same document for testing)
-
-        if insert_col_before:
-            if not node.get_children()[0].get_all_content():
-                return
-
-            if use_graphical_nodes:
-                # Adjust the column's x first
-                graphical_nodes = [gn for gn in node.select('parent::page')[0].select('//rect | //figure-line')
-                                   if gn.get_bbox()[0] < node.get_x()]
-
-                # Get the line with the max x from graphical_nodes
-                max_x = max([gn.get_bbox()[0] for gn in graphical_nodes])
-                first_col_node = node.get_children()[0]
-                first_col_node.set_bbox([max_x, node.get_y(), first_col_node.get_bbox()[2], node.get_bbox()[3]])
-                node.set_bbox([max_x, node.get_y(), node.get_bbox()[2], node.get_bbox()[3]])
-
-            new_x2 = node.get_x() - 0.01 if use_graphical_nodes \
-                else node.get_x() - col_space_multiplier * node.get_statistics()['updated_mean_width']
-            column_node.set_bbox([0.0, node.get_y(), new_x2, node.get_bbox()[3]])
-
-            new_columns = [column_node] + list(node.get_children())
-
-        if insert_col_after:
-            if not node.get_children()[-1].get_all_content():
-                return
-
-            if use_graphical_nodes:
-                # Adjust the column's x first
-                graphical_nodes = [gn for gn in node.select('parent::page')[0].select('//rect | //figure-line')
-                                   if gn.get_bbox()[0] > node.get_bbox()[2]]
-
-                # Get the line with the max x from graphical_nodes
-                min_x = min([gn.get_bbox()[0] for gn in graphical_nodes])
-                last_col_node = node.get_children()[-1]
-                last_col_node.set_bbox([last_col_node.get_x(), node.get_y(), min_x, node.get_bbox()[3]])
-                node.set_bbox([node.get_x(), node.get_y(), last_col_node.get_bbox()[2], node.get_bbox()[3]])
-
-            new_x2 = node.get_x() - 0.01 if use_graphical_nodes \
-                else node.get_x() - col_space_multiplier * node.get_statistics()['updated_mean_width']
-            column_node.set_bbox([0.0, node.get_y(), new_x2, node.get_bbox()[3]])
-
-
-            # New bbox is from last node's x + content-area's width
-            column_node.set_bbox([node.get_x() + node.get_width() +
-                                  col_space_multiplier * node.get_statistics()['updated_mean_width'],
-                                  node.get_y(),
-                                  node.get_parent().get_x() + node.get_parent().get_width(),
-                                  node.get_bbox()[3]])
-            new_columns = node.get_children() + [column_node]
-    else:
-        return
 
     node.adopt_children(new_columns, replace=True)
     node.set_bbox_from_children()
