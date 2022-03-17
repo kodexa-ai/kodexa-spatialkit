@@ -1,4 +1,3 @@
-
 def transform_line_to_columns(node, col_space_multiplier=3.0, col_marker_line=None,
                               use_graphical_nodes=False, graphic_slop=1.0):
     """
@@ -562,32 +561,13 @@ def adjust_table_line_columns(node, table, col_space_multiplier):
     return temp_line_columns
 
 
-def overlaps_with(node, other_node):
-    """
-    Returns True if this node overlaps with other_node (works with nodes on the same line)
-    :param other_node: the other node to check
-    """
-    # x1 <= xb and x2 >= xa
-    return node.get_x() <= other_node.get_x() + other_node.get_width() and \
-           node.get_x() + node.get_width() >= other_node.get_x()
-
-
-def width_of_overlap(node, other_node):
-    """
-   Returns the width of overlap between this node and other_node
-   Returns 0.0 if there is no overlap
-   :param other_node: the other node to check
-   """
-    if overlaps_with(node, other_node):
-        # Nodes overlap
-        x1 = max(node.get_x(), other_node.get_x())
-        x2 = min(node.get_x() + node.get_width(), other_node.get_x() + other_node.get_width())
-        return x2 - x1
-    else:
-        return 0.0
-
-
 def update_bbox_for_columns(col1, col2, update_col1=True):
+    """
+    Updates the bounding box of the columns when lining them up in a table
+    :param col1:  column 1
+    :param col2: column 2
+    :param update_col1: if set to False, only col2's bbox will be updated. Default is True.
+    """
     # Set the bounding box to cover the min x1 and max x2
     min_x1 = min(col1.get_bbox()[0], col2.get_bbox()[0])
     max_x2 = max(col1.get_bbox()[2], col2.get_bbox()[2])
