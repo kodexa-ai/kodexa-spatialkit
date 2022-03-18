@@ -133,7 +133,7 @@ def get_azure_page_words(azure_page):
     return page_words
 
 
-def get_azure_next_line(document_lines, ref_line, direction='right'):
+def get_azure_next_line(document_lines, ref_line, direction='right', overlap_percentage=0.6):
     if ref_line not in document_lines:
         return None
 
@@ -145,7 +145,7 @@ def get_azure_next_line(document_lines, ref_line, direction='right'):
         # Get all the lines to the right of the cell, where the y overlaps; and sort according to x
         right_lines = [right_line for right_line in possible_lines
                        if right_line.get_bbox()[0] >= ref_bbox[2] and
-                       percent_nodes_overlap(ref_bbox, right_line.get_bbox(), 'y') >= OVERLAP_PERCENTAGE]
+                       percent_nodes_overlap(ref_bbox, right_line.get_bbox(), 'y') >= overlap_percentage]
 
         if not right_lines:
             return None
@@ -161,7 +161,7 @@ def get_azure_next_line(document_lines, ref_line, direction='right'):
         # Get all the lines to the left of the cell, where the y overlaps; and sort according to x2 (decreasing)
         left_lines = [left_line for left_line in possible_lines
                       if left_line.get_bbox()[2] <= ref_bbox[0] and
-                      percent_nodes_overlap(ref_bbox, left_line.get_bbox(), 'y') >= OVERLAP_PERCENTAGE]
+                      percent_nodes_overlap(ref_bbox, left_line.get_bbox(), 'y') >= overlap_percentage]
 
         if not left_lines:
             return None
@@ -177,7 +177,7 @@ def get_azure_next_line(document_lines, ref_line, direction='right'):
         # Get all the lines below of the cell, where the x overlaps; and sort according to y
         down_lines = [down_line for down_line in possible_lines if
                       down_line.get_bbox()[3] <= ref_bbox[1] and
-                      percent_nodes_overlap(ref_bbox, down_line.get_bbox(), 'x') >= CHARGES_OVERLAP_PERCENTAGE_X]
+                      percent_nodes_overlap(ref_bbox, down_line.get_bbox(), 'x') >= overlap_percentage]
 
         if not down_lines:
             return None
@@ -193,7 +193,7 @@ def get_azure_next_line(document_lines, ref_line, direction='right'):
         # Get all the lines above of the cell, where the x overlaps; and sort according to y
         up_lines = [up_line for up_line in possible_lines if
                     up_line.get_bbox()[1] >= ref_bbox[3] and
-                    percent_nodes_overlap(ref_bbox, up_line.get_bbox(), 'x') >= CHARGES_OVERLAP_PERCENTAGE_X]
+                    percent_nodes_overlap(ref_bbox, up_line.get_bbox(), 'x') >= overlap_percentage]
 
         if not up_lines:
             return None
@@ -308,8 +308,6 @@ def check_azure_line_group(original_line_group):
         line_group_inserted = False
         for lg_index, line_group in enumerate(line_groups):
             # If the azure line does not x-overlap with this line group, check if they y-overlap (+/- 0.1)
-            # if not any(percent_nodes_overlap(azure_line[KDXA_BBOX_KEY], line[KDXA_BBOX_KEY], axis_overlap='x')
-            #            >= OVERLAP_PERCENTAGE for line in line_group) and \
             if (azure_line[KDXA_BBOX_KEY][0] >= line_group[-1][KDXA_BBOX_KEY][2] - 0.1 or
                 azure_line[KDXA_BBOX_KEY][2] <= line_group[0][KDXA_BBOX_KEY][0] + 0.1) and \
                     page_line_overlaps_with_line_group(azure_line, line_group,
