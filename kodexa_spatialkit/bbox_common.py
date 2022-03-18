@@ -25,6 +25,14 @@ def width_of_overlap(node, other_node):
         return 0.0
 
 
+def kdxa_nodes_overlap(kdxa_node1, kdxa_node2, overlap_percentage):
+    node1_bbox = kdxa_node1.get_bbox()
+    node2_bbox = kdxa_node2.get_bbox()
+
+    return percent_nodes_overlap(node1_bbox, node2_bbox, axis_overlap='x') >= overlap_percentage and \
+           percent_nodes_overlap(node1_bbox, node2_bbox, axis_overlap='y') >= overlap_percentage
+
+
 def percent_nodes_overlap(node1_bbox, node2_bbox, axis_overlap='y'):
     # These are the bboxes in the Kodexa world
     # line1 is the reference and line2 is the line to check
@@ -56,14 +64,7 @@ def percent_nodes_overlap(node1_bbox, node2_bbox, axis_overlap='y'):
         return 0.0
 
 
-def kdxa_nodes_overlap(kdxa_node1, kdxa_node2, overlap_percentage):
-    node1_bbox = kdxa_node1.get_bbox()
-    node2_bbox = kdxa_node2.get_bbox()
-
-    return percent_nodes_overlap(node1_bbox, node2_bbox, axis_overlap='x') >= overlap_percentage and \
-           percent_nodes_overlap(node1_bbox, node2_bbox, axis_overlap='y') >= overlap_percentage
-
-
 def update_overlap_bbox(bbox1, bbox2):
     return [min(bbox1[0], bbox2[0]), min(bbox1[1], bbox2[1]),
             max(bbox1[2], bbox2[2]), max(bbox1[3], bbox2[3])]
+
