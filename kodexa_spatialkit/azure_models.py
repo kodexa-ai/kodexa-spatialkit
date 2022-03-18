@@ -1,6 +1,6 @@
 from kodexa import Document
 import numpy as np
-from .bbox_common import percent_nodes_overlap
+from .bbox_common import *
 
 KDXA_BBOX_KEY = 'kodexa_bbox'
 

@@ -1,3 +1,6 @@
+from .bbox_common import *
+
+
 def transform_line_to_columns(node, col_space_multiplier=3.0, col_marker_line=None,
                               use_graphical_nodes=False, graphic_slop=1.0):
     """
