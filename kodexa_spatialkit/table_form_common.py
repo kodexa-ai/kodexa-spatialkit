@@ -490,7 +490,7 @@ def adjust_table_line_columns(node, table, col_space_multiplier):
                 break
 
             # Check if the line_col's x is after ref_col's x + width
-            elif line_col.get_x() > ref_col.get_x() + ref_col.get_width() + col_space_multiplier:
+            elif line_col.get_x() > ref_col.get_x() + ref_col.get_width() + col_space_multiplier * mean_width:
                 if ref_col_idx == len(ref_columns) - 1:
                     if overlap_found:
                         # These are extra columns
