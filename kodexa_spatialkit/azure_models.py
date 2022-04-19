@@ -101,7 +101,7 @@ def create_page_node_line_up_kodexa(document, page_node, azure_page):
                             azure_nodes_overlap(w, azure_line, azure_page) and w not in already_added_azure_words][0]
                 except IndexError:
                     print('Issue with converting Azure lines to Kodexa lines')
-                    return True
+                    continue
 
                 # Add this word as it has already been found
                 already_added_azure_words.append(word)
