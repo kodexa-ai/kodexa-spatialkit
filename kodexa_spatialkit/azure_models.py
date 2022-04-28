@@ -219,22 +219,30 @@ def group_azure_lines_to_kodexa_lines(page):
         return []
 
     # Convert Azure lines into Kodexa lines
-    heights = []
+    line_heights = []
+    char_widths = []
     for page_line in page_lines:
         page_line[KDXA_BBOX_KEY] = convert_azure_bbox(page_line, page)
-        heights.append(page_line[KDXA_BBOX_KEY][3] - page_line[KDXA_BBOX_KEY][1])
         if 'content' not in page_line.keys():
             page_line['content'] = page_line['text']
+        line_heights.append(page_line[KDXA_BBOX_KEY][3] - page_line[KDXA_BBOX_KEY][1])
+        char_widths.append((page_line[KDXA_BBOX_KEY][2] - page_line[KDXA_BBOX_KEY][0])/len(page_line['content']))
+    mean_line_height = sum(line_heights) / len(line_heights)
+    mean_char_width = sum(char_widths)/len(char_widths)
 
-    # Remove lines that are more than 1.5* the height of the average?
-    mean_height = sum(heights) / len(heights)
-    big_page_lines = [page_line for page_line in page_lines
-                      if page_line[KDXA_BBOX_KEY][3] - page_line[KDXA_BBOX_KEY][1] >= 2.0 * mean_height]
+    # Separate lines that are more than 1.5* the height of the average
+    # Separate the vertical lines
+    lines_to_separate = [page_lines[i] for i in range(len(line_heights))
+                       if line_heights[i] >= 2.0 * mean_line_height or char_widths[i] <= 0.5*mean_char_width]
+
+    # Initialize line_groups
+    line_groups = [[line] for line in lines_to_separate]
 
     # Sort the remaining page_lines by y1
-    big_page_lines.extend(sorted([page_line for page_line in page_lines if page_line not in big_page_lines],
-                                 key=lambda d: d[KDXA_BBOX_KEY][1], reverse=True))
-    line_groups = check_azure_line_group(big_page_lines)
+    lines_to_sort = sorted([page_line for page_line in page_lines if page_line not in lines_to_separate],
+                                 key=lambda d: d[KDXA_BBOX_KEY][1], reverse=True)
+
+    line_groups.extend(check_azure_line_group(lines_to_sort))
 
     # Need to sort the line_groups based on y
     line_groups.sort(key=lambda line_group: [line[KDXA_BBOX_KEY][1] for line in line_group], reverse=True)
