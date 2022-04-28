@@ -114,7 +114,10 @@ def create_page_node_line_up_kodexa(document, page_node, azure_page):
                 word_nodes.append(word_node)
 
         line_node.set_bbox_from_children()
-        line_node.set_statistics({'updated_mean_width': chars_total_width / char_count})
+        if char_count > 0:
+            line_node.set_statistics({'updated_mean_width': chars_total_width / char_count})
+        else:
+            line_node.set_statistics({'updated_mean_width': 0.0})
 
     # This is a good kddb document (no issue)
     return False
@@ -390,4 +393,3 @@ def rotate(point, origin, degrees):
     qx = offset_x + cos_rad * adjusted_x + sin_rad * adjusted_y
     qy = offset_y + -sin_rad * adjusted_x + cos_rad * adjusted_y
     return qx, qy
-
